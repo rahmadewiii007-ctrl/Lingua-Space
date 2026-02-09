@@ -1,0 +1,493 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Search, BookOpen, Layers, ClipboardCheck, PlayCircle, 
+  X, ChevronRight, RotateCcw, Home, Menu, Info 
+} from 'lucide-react';
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('home');
+  const [grammarSearch, setGrammarSearch] = useState('');
+  const [vocabSearch, setVocabSearch] = useState('');
+  const [selectedGrammar, setSelectedGrammar] = useState(null);
+  
+  // Quiz State
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  // --- DATA MATERI ---
+  const grammarData = [
+    { id: 1, title: "Simple Present Tense", desc: "Daily habits and general facts.", formula: "S + V1 (s/es)", body: "Used for things that happen regularly or are always true. Example: 'The sun rises in the east'.", yt: "https://www.youtube.com/results?search_query=simple+present+tense+explanation" },
+    { id: 2, title: "Present Continuous", desc: "Actions happening right now.", formula: "S + am/is/are + V-ing", body: "Focuses on activities in progress. Example: 'I am reading a book at the moment'.", yt: "https://www.youtube.com/results?search_query=present+continuous+explanation" },
+    { id: 3, title: "Simple Past Tense", desc: "Completed actions in the past.", formula: "S + V2", body: "Used for actions that finished at a specific time. Example: 'I went to London last year'.", yt: "https://www.youtube.com/results?search_query=simple+past+tense+explanation" },
+    { id: 4, title: "Present Perfect", desc: "Past actions linked to the present.", formula: "S + have/has + V3", body: "Actions that happened at an unspecified time or started in the past and continue. Example: 'I have lived here for 5 years'.", yt: "https://www.youtube.com/results?search_query=present+perfect+explanation" },
+    { id: 5, title: "Future Tense", desc: "Plans and predictions.", formula: "S + will + V1", body: "Talking about future events or sudden decisions. Example: 'I will help you'.", yt: "https://www.youtube.com/results?search_query=future+tense+explanation" },
+    { id: 6, title: "Passive Voice", desc: "Focus on the object receiving action.", formula: "O + be + V3", body: "Used when the actor is unknown or less important. Example: 'The bridge was built in 1990'.", yt: "https://www.youtube.com/results?search_query=passive+voice+explanation" },
+    { id: 7, title: "Conditional Type 1", desc: "Possible real-world situations.", formula: "If + Present, Will + V1", body: "A likely result if a condition is met. Example: 'If it rains, I will stay home'.", yt: "https://www.youtube.com/results?search_query=conditional+sentence+type+1" },
+    { id: 8, title: "Conditional Type 2", desc: "Hypothetical or imaginary situations.", formula: "If + Past, Would + V1", body: "Situations that are unlikely to happen now. Example: 'If I won the lottery, I would travel'.", yt: "https://www.youtube.com/results?search_query=conditional+sentence+type+2" },
+    { id: 9, title: "Modal Verbs", desc: "Expressing ability and permission.", formula: "Can / Could / May / Must", body: "Modals add meaning to verbs. Example: 'You must follow the rules'.", yt: "https://www.youtube.com/results?search_query=modal+verbs+english" },
+    { id: 10, title: "Gerunds & Infinitives", desc: "Verb forms used as nouns.", formula: "V-ing / To + V1", body: "Example: 'I enjoy swimming' (Gerund) or 'I want to go' (Infinitive).", yt: "https://www.youtube.com/results?search_query=gerunds+and+infinitives+explanation" },
+    { id: 11, title: "Comparison Degrees", desc: "Comparing two or more things.", formula: "Adj + er / more + Adj", body: "Comparative and Superlative. Example: 'He is taller than me'.", yt: "https://www.youtube.com/results?search_query=comparative+superlative+english" },
+    { id: 12, title: "Adjective Clauses", desc: "Defining nouns in detail.", formula: "Who / Which / That", body: "Used to combine sentences. Example: 'The man who lives there is a doctor'.", yt: "https://www.youtube.com/results?search_query=adjective+clauses+explanation" },
+    { id: 13, title: "Direct & Indirect Speech", desc: "Reporting what others said.", formula: "He said that...", body: "Changing tenses when reporting. Example: 'I am tired' -> 'He said he was tired'.", yt: "https://www.youtube.com/results?search_query=reported+speech+english" },
+    { id: 14, title: "Question Tags", desc: "Confirming information.", formula: "..., isn't it?", body: "Small questions at the end of sentences. Example: 'You are a student, aren't you?'.", yt: "https://www.youtube.com/results?search_query=question+tags+english" },
+    { id: 15, title: "Articles", desc: "Defining nouns using A, An, The.", formula: "A / An / The", body: "Definite and Indefinite articles usage rules.", yt: "https://www.youtube.com/results?search_query=articles+a+an+the+english" }
+  ];
+
+  const vocabData = [
+    // A
+    {en: "Abandon", id: "Meninggalkan"}, {en: "Ability", id: "Kemampuan"}, {en: "Absence", id: "Ketiadaan"}, {en: "Abundant", id: "Melimpah"}, {en: "Accept", id: "Menerima"},
+    // B
+    {en: "Balance", id: "Keseimbangan"}, {en: "Barrier", id: "Hambatan"}, {en: "Beautiful", id: "Indah"}, {en: "Behavior", id: "Perilaku"}, {en: "Believe", id: "Percaya"},
+    // C
+    {en: "Challenge", id: "Tantangan"}, {en: "Change", id: "Berubah"}, {en: "Comfort", id: "Kenyamanan"}, {en: "Commitment", id: "Komitmen"}, {en: "Compare", id: "Membandingkan"},
+    // D
+    {en: "Dangerous", id: "Berbahaya"}, {en: "Decision", id: "Keputusan"}, {en: "Defend", id: "Membela"}, {en: "Describe", id: "Menjelaskan"}, {en: "Determined", id: "Bertekad"},
+    // E
+    {en: "Education", id: "Pendidikan"}, {en: "Efficient", id: "Efisien"}, {en: "Effort", id: "Usaha"}, {en: "Embrace", id: "Memeluk"}, {en: "Encourage", id: "Mendorong"},
+    // F
+    {en: "Faith", id: "Keyakinan"}, {en: "Famous", id: "Terkenal"}, {en: "Flexible", id: "Fleksibel"}, {en: "Focus", id: "Fokus"}, {en: "Frequent", id: "Sering"},
+    // G
+    {en: "Gather", id: "Berkumpul"}, {en: "Generous", id: "Dermawan"}, {en: "Genuine", id: "Asli"}, {en: "Grateful", id: "Bersyukur"}, {en: "Growth", id: "Pertumbuhan"},
+    // H
+    {en: "Habit", id: "Kebiasaan"}, {en: "Happen", id: "Terjadi"}, {en: "Health", id: "Kesehatan"}, {en: "Honest", id: "Jujur"}, {en: "Humble", id: "Rendah Hati"},
+    // I
+    {en: "Identify", id: "Mengidentifikasi"}, {en: "Ignore", id: "Abaikan"}, {en: "Impact", id: "Dampak"}, {en: "Improve", id: "Meningkatkan"}, {en: "Insight", id: "Wawasan"},
+    // J
+    {en: "Jealous", id: "Cemburu"}, {en: "Job", id: "Pekerjaan"}, {en: "Join", id: "Bergabung"}, {en: "Journey", id: "Perjalanan"}, {en: "Justice", id: "Keadilan"},
+    // K
+    {en: "Keep", id: "Menjaga"}, {en: "Kindness", id: "Kebaikan"}, {en: "Knowledge", id: "Pengetahuan"}, {en: "Known", id: "Dikenal"}, {en: "Key", id: "Kunci"},
+    // L
+    {en: "Language", id: "Bahasa"}, {en: "Laugh", id: "Tertawa"}, {en: "Learn", id: "Belajar"}, {en: "Level", id: "Tingkat"}, {en: "Loyal", id: "Setia"},
+    // M
+    {en: "Magnificent", id: "Megah"}, {en: "Maintain", id: "Memelihara"}, {en: "Manage", id: "Mengelola"}, {en: "Meaning", id: "Arti"}, {en: "Measure", id: "Mengukur"},
+    // N
+    {en: "Narrow", id: "Sempit"}, {en: "Necessary", id: "Perlu"}, {en: "Negative", id: "Negatif"}, {en: "Network", id: "Jaringan"}, {en: "Notice", id: "Memperhatikan"},
+    // O
+    {en: "Observe", id: "Mengamati"}, {en: "Obtain", id: "Memperoleh"}, {en: "Occur", id: "Terjadi"}, {en: "Opinion", id: "Pendapat"}, {en: "Opportunity", id: "Peluang"},
+    // P
+    {en: "Patient", id: "Sabar"}, {en: "Perform", id: "Melakukan"}, {en: "Persistent", id: "Gigih"}, {en: "Pleasure", id: "Kesenangan"}, {en: "Possible", id: "Mungkin"},
+    // Q
+    {en: "Quality", id: "Kualitas"}, {en: "Quantity", id: "Kuantitas"}, {en: "Question", id: "Pertanyaan"}, {en: "Quick", id: "Cepat"}, {en: "Quiet", id: "Tenang"},
+    // R
+    {en: "Rarely", id: "Jarang"}, {en: "Reach", id: "Menjangkau"}, {en: "Receive", id: "Menerima"}, {en: "Reduce", id: "Mengurangi"}, {en: "Reliable", id: "Handal"},
+    // S
+    {en: "Satisfied", id: "Puas"}, {en: "Schedule", id: "Jadwal"}, {en: "Simple", id: "Sederhana"}, {en: "Skill", id: "Keahlian"}, {en: "Succeed", id: "Berhasil"},
+    // T
+    {en: "Target", id: "Sasaran"}, {en: "Temporary", id: "Sementara"}, {en: "Think", id: "Berpikir"}, {en: "Thrive", id: "Berkembang"}, {en: "Tough", id: "Tangguh"},
+    // U
+    {en: "Understand", id: "Mengerti"}, {en: "Unique", id: "Unik"}, {en: "Unit", id: "Satuan"}, {en: "Unknown", id: "Tidak Diketahui"}, {en: "Urgent", id: "Mendesak"},
+    // V
+    {en: "Valuable", id: "Berharga"}, {en: "Various", id: "Berbagai"}, {en: "Vast", id: "Luas"}, {en: "Verify", id: "Memverifikasi"}, {en: "Visible", id: "Terlihat"},
+    // W
+    {en: "Wealth", id: "Kekayaan"}, {en: "Weapon", id: "Senjata"}, {en: "Weather", id: "Cuaca"}, {en: "Wisdom", id: "Kebijaksanaan"}, {en: "Wonder", id: "Keajaiban"},
+    // X
+    {en: "Xenial", id: "Ramah Tamah"}, {en: "X-ray", id: "Sinar-X"}, {en: "Xenophobia", id: "Ketakutan Asing"}, {en: "Xylophone", id: "Silofon"}, {en: "Xerox", id: "Fotokopi"},
+    // Y
+    {en: "Yield", id: "Menghasilkan"}, {en: "Yearly", id: "Tahunan"}, {en: "Yesterday", id: "Kemarin"}, {en: "Young", id: "Muda"}, {en: "Youth", id: "Masa Muda"},
+    // Z
+    {en: "Zeal", id: "Semangat"}, {en: "Zero", id: "Nol"}, {en: "Zone", id: "Zona"}, {en: "Zest", id: "Antusiasme"}, {en: "Zigzag", id: "Berliku-liku"}
+  ];
+
+  const quizQuestions = [
+    { q: "Choose the correct 'Simple Present' sentence.", options: ["She go to school", "She goes to school", "She going to school", "She is go to school"], correct: 1, explanation: "For singular subjects (She/He/It), we add -s/es to the verb." },
+    { q: "What is the past form (V2) of 'Buy'?", options: ["Buyed", "Bought", "Buying", "Bring"], correct: 1, explanation: "'Buy' is an irregular verb. Past form is 'Bought'." },
+    { q: "Antonym of 'Humble' is...", options: ["Kind", "Modest", "Arrogant", "Shy"], correct: 2, explanation: "Arrogant is the opposite of being humble." },
+    { q: "By the time I arrived, the train ___ left.", options: ["has", "have", "had", "is"], correct: 2, explanation: "Past Perfect (had + V3) is used for an action completed before another past action." },
+    { q: "Synonym of 'Essential' is...", options: ["Trivial", "Crucial", "Minor", "Optional"], correct: 1, explanation: "'Crucial' means extremely important, same as essential." },
+    { q: "I ___ English since 2010.", options: ["learn", "am learning", "have learned", "will learn"], correct: 2, explanation: "Present Perfect is used for actions starting in the past and continuing to now." },
+    { q: "If it ___ tomorrow, we will stay home.", options: ["rain", "rains", "will rain", "rained"], correct: 1, explanation: "First Conditional: If + Present Simple, Will + V1." },
+    { q: "He said that he ___ tired.", options: ["is", "was", "be", "were"], correct: 1, explanation: "In Indirect Speech, Present Simple changes to Past Simple." },
+    { q: "The cake ___ by my mother yesterday.", options: ["is made", "made", "was made", "makes"], correct: 2, explanation: "Passive Voice Past: Was/Were + V3." },
+    { q: "I enjoy ___ movies at night.", options: ["watch", "to watch", "watching", "watched"], correct: 2, explanation: "The verb 'enjoy' is followed by a Gerund (V-ing)." },
+    { q: "You are a student, ___?", options: ["are you", "aren't you", "don't you", "is it"], correct: 1, explanation: "Question Tag for positive sentence uses negative auxiliary." },
+    { q: "I am looking forward to ___ you.", options: ["meet", "meets", "meeting", "met"], correct: 2, explanation: "'Look forward to' is followed by a Gerund (V-ing)." },
+    { q: "This is the ___ book I have ever read.", options: ["better", "good", "best", "more good"], correct: 2, explanation: "Superlative degree of 'Good' is 'Best'." },
+    { q: "___ sun is very bright today.", options: ["A", "An", "The", "No article"], correct: 2, explanation: "Use 'The' for unique objects like the sun." },
+    { q: "She ___ her homework yet.", options: ["don't finish", "didn't finish", "hasn't finished", "isn't finishing"], correct: 2, explanation: "Present Perfect negative with 'yet'." },
+    { q: "The man ___ lives next door is a pilot.", options: ["which", "who", "whom", "whose"], correct: 1, explanation: "'Who' is used for people in adjective clauses." },
+    { q: "We ___ to Bali next month.", options: ["go", "goes", "are going", "went"], correct: 2, explanation: "Present Continuous can be used for future plans." },
+    { q: "Can you help me? I ___ find my key.", options: ["can't", "mustn't", "shouldn't", "don't"], correct: 0, explanation: "'Can't' expresses inability." },
+    { q: "If I ___ you, I would take that job.", options: ["am", "was", "were", "be"], correct: 2, explanation: "Conditional Type 2: 'Were' is used for all subjects in the If-clause." },
+    { q: "He is interested ___ learning music.", options: ["at", "on", "in", "to"], correct: 2, explanation: "The adjective 'interested' is followed by the preposition 'in'." }
+  ];
+
+  // --- LOGIC ---
+  const filteredGrammar = useMemo(() => 
+    grammarData.filter(i => i.title.toLowerCase().includes(grammarSearch.toLowerCase())),
+    [grammarSearch]
+  );
+
+  const filteredVocab = useMemo(() => 
+    vocabData.filter(i => i.en.toLowerCase().includes(vocabSearch.toLowerCase()) || i.id.toLowerCase().includes(vocabSearch.toLowerCase())),
+    [vocabSearch]
+  );
+
+  const handleAnswer = (idx) => {
+    const isCorrect = idx === quizQuestions[currentQuestion].correct;
+    if (isCorrect) setScore(score + 1);
+    setFeedback({
+      isCorrect,
+      explanation: quizQuestions[currentQuestion].explanation
+    });
+  };
+
+  const nextQ = () => {
+    setFeedback(null);
+    if (currentQuestion + 1 < quizQuestions.length) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      setShowResult(true);
+    }
+  };
+
+  const restartQuiz = () => {
+    setCurrentQuestion(0);
+    setScore(0);
+    setShowResult(false);
+    setFeedback(null);
+    setQuizStarted(true);
+  };
+
+  // --- RENDERING ---
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 md:pb-0">
+      {/* Desktop Sidebar / Header */}
+      <nav className="hidden md:flex sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 justify-between items-center shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-600 p-2 rounded-xl text-white">
+            <Layers size={24} />
+          </div>
+          <span className="text-2xl font-black text-indigo-600 tracking-tight">LINGUASPACE</span>
+        </div>
+        <div className="flex gap-1">
+          {['home', 'grammar', 'vocabulary', 'quiz'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-2 rounded-full font-bold transition-all ${
+                activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto p-4 md:p-8">
+        
+        {/* HOME SECTION */}
+        {activeTab === 'home' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="relative h-[400px] md:h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl group">
+              <img 
+                src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop" 
+                alt="Portal Background" 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/90 via-indigo-900/60 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
+                <h1 className="text-4xl md:text-7xl font-black mb-4 leading-tight">
+                  Master Your <br /><span className="text-indigo-400">Language.</span>
+                </h1>
+                <p className="text-lg md:text-xl text-slate-200 max-w-xl mb-8">
+                  Your all-in-one portal to learn English grammar, expand your vocabulary, and test your skills with our interactive engine.
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <button onClick={() => setActiveTab('grammar')} className="bg-white text-indigo-900 px-8 py-4 rounded-2xl font-black hover:bg-indigo-50 transition shadow-xl">
+                    Get Started
+                  </button>
+                  <button onClick={() => setActiveTab('quiz')} className="bg-indigo-600/30 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-2xl font-bold hover:bg-indigo-600/50 transition">
+                    Take Proficiency Test
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { title: "Grammar Library", icon: <BookOpen />, color: "bg-blue-500", tab: "grammar", count: "15 Lessons" },
+                { title: "Vocabulary Bank", icon: <Layers />, color: "bg-purple-500", tab: "vocabulary", count: "100+ Words" },
+                { title: "Smart Quiz", icon: <ClipboardCheck />, color: "bg-emerald-500", tab: "quiz", count: "20 Questions" }
+              ].map((feature, i) => (
+                <div 
+                  key={i} 
+                  onClick={() => setActiveTab(feature.tab)}
+                  className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition cursor-pointer group"
+                >
+                  <div className={`${feature.color} w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition`}>
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-bold mb-1">{feature.title}</h3>
+                  <p className="text-slate-500 text-sm">{feature.count}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* GRAMMAR SECTION */}
+        {activeTab === 'grammar' && (
+          <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+              <div>
+                <h2 className="text-4xl font-black tracking-tight mb-2">Grammar <span className="text-indigo-600">Library</span></h2>
+                <p className="text-slate-500">Understand the rules with comprehensive formulas and explanations.</p>
+              </div>
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Search lessons..." 
+                  className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-500 transition bg-white"
+                  value={grammarSearch}
+                  onChange={(e) => setGrammarSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredGrammar.map(item => (
+                <div 
+                  key={item.id}
+                  onClick={() => setSelectedGrammar(item)}
+                  className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group hover:-translate-y-2"
+                >
+                  <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-indigo-600 transition">{item.title}</h3>
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-2">{item.desc}</p>
+                  <div className="bg-indigo-50 text-indigo-700 font-mono text-xs p-3 rounded-xl font-bold truncate">
+                    {item.formula}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* VOCABULARY SECTION */}
+        {activeTab === 'vocabulary' && (
+          <div className="animate-in slide-in-from-bottom-4 duration-500">
+             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+              <div>
+                <h2 className="text-4xl font-black tracking-tight mb-2">Vocabulary <span className="text-indigo-600">Bank</span></h2>
+                <p className="text-slate-500">Daily essential words to improve your conversation skills (A-Z).</p>
+              </div>
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Search English or Indo..." 
+                  className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-500 transition bg-white"
+                  value={vocabSearch}
+                  onChange={(e) => setVocabSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {filteredVocab.map((v, i) => (
+                <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-200 transition text-center group">
+                  <div className="text-indigo-600 font-black text-lg group-hover:scale-110 transition">{v.en}</div>
+                  <div className="text-slate-400 text-xs mt-1 font-medium">{v.id}</div>
+                </div>
+              ))}
+            </div>
+            {filteredVocab.length === 0 && (
+              <div className="text-center py-20">
+                <p className="text-slate-400 font-medium">No results found for "{vocabSearch}"</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* QUIZ SECTION */}
+        {activeTab === 'quiz' && (
+          <div className="max-w-2xl mx-auto animate-in zoom-in duration-300">
+            {!quizStarted && !showResult && (
+              <div className="bg-white p-12 rounded-[3rem] shadow-2xl text-center border border-slate-100">
+                <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                  <ClipboardCheck size={40} />
+                </div>
+                <h2 className="text-3xl font-black mb-4 uppercase">Proficiency Test</h2>
+                <p className="text-slate-500 mb-10">20 comprehensive questions about grammar and vocabulary. Test your limits!</p>
+                <button 
+                  onClick={() => setQuizStarted(true)}
+                  className="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black text-xl hover:bg-indigo-700 transition shadow-xl shadow-indigo-200"
+                >
+                  Start Test
+                </button>
+              </div>
+            )}
+
+            {quizStarted && !showResult && (
+              <div className="bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden">
+                <div className="bg-slate-50 px-8 py-6 border-b flex justify-between items-center">
+                  <span className="font-bold text-indigo-600">Question {currentQuestion + 1}/20</span>
+                  <div className="w-32 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-indigo-600 transition-all duration-300" 
+                      style={{ width: `${((currentQuestion + 1) / 20) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-8 md:p-12">
+                  <h3 className="text-2xl font-black mb-10 text-slate-800 leading-snug">
+                    {quizQuestions[currentQuestion].q}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {quizQuestions[currentQuestion].options.map((opt, i) => (
+                      <button
+                        key={i}
+                        disabled={!!feedback}
+                        onClick={() => handleAnswer(i)}
+                        className={`w-full text-left p-6 rounded-2xl border-2 font-bold transition-all ${
+                          feedback 
+                            ? i === quizQuestions[currentQuestion].correct 
+                              ? 'bg-emerald-50 border-emerald-500 text-emerald-700' 
+                              : feedback.isCorrect === false && i === feedback.selected
+                                ? 'bg-red-50 border-red-500 text-red-700' 
+                                : 'border-slate-100 opacity-50'
+                            : 'border-slate-100 hover:border-indigo-600 hover:bg-indigo-50 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm border-current">
+                            {String.fromCharCode(65 + i)}
+                          </span>
+                          {opt}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {feedback && (
+                    <div className={`mt-8 p-6 rounded-2xl animate-in fade-in slide-in-from-top-2 ${feedback.isCorrect ? 'bg-emerald-100/50 text-emerald-800' : 'bg-red-100/50 text-red-800'}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Info size={18} />
+                        <span className="font-black uppercase text-xs tracking-wider">
+                          {feedback.isCorrect ? 'Correct Answer!' : 'Incorrect'}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium leading-relaxed">{feedback.explanation}</p>
+                      <button 
+                        onClick={nextQ}
+                        className="mt-6 w-full bg-indigo-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition"
+                      >
+                        Next Question <ChevronRight size={20} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {showResult && (
+              <div className="bg-white p-12 rounded-[3rem] shadow-2xl text-center border border-slate-100 animate-in zoom-in">
+                <div className="text-7xl mb-6">??</div>
+                <h2 className="text-4xl font-black mb-2">Test Complete!</h2>
+                <p className="text-slate-500 mb-10">You've answered 20 questions successfully.</p>
+                
+                <div className="flex justify-center items-center gap-10 mb-12">
+                  <div>
+                    <div className="text-5xl font-black text-indigo-600">{score}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Correct</div>
+                  </div>
+                  <div className="h-12 w-px bg-slate-200"></div>
+                  <div>
+                    <div className="text-5xl font-black text-slate-800">{Math.round((score/20)*100)}%</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Accuracy</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={restartQuiz}
+                    className="bg-indigo-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition shadow-lg"
+                  >
+                    <RotateCcw size={20} /> Restart
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('home')}
+                    className="bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition"
+                  >
+                    Back Home
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* MOBILE BOTTOM NAV */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-3 flex justify-around items-center z-50">
+        {[
+          { id: 'home', icon: <Home size={22} />, label: 'Home' },
+          { id: 'grammar', icon: <BookOpen size={22} />, label: 'Grammar' },
+          { id: 'vocabulary', icon: <Layers size={22} />, label: 'Vocab' },
+          { id: 'quiz', icon: <ClipboardCheck size={22} />, label: 'Quiz' }
+        ].map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${
+              activeTab === item.id ? 'text-indigo-600' : 'text-slate-400'
+            }`}
+          >
+            {item.icon}
+            <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* MODAL GRAMMAR DETAIL */}
+      {selectedGrammar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedGrammar(null)} />
+          <div className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div className="p-8 md:p-10">
+              <div className="flex justify-between items-start mb-8">
+                <h2 className="text-3xl font-black text-indigo-600 leading-tight">{selectedGrammar.title}</h2>
+                <button onClick={() => setSelectedGrammar(null)} className="p-2 hover:bg-slate-100 rounded-full transition text-slate-400">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="bg-indigo-600 text-white p-6 rounded-3xl shadow-xl shadow-indigo-100">
+                  <span className="text-[10px] uppercase font-bold tracking-widest opacity-70 block mb-1">Standard Formula</span>
+                  <p className="text-xl font-mono font-bold">{selectedGrammar.formula}</p>
+                </div>
+
+                <div className="space-y-4 text-slate-600 leading-relaxed">
+                  <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Info size={18} className="text-indigo-500" /> Explanation
+                  </h4>
+                  <p>{selectedGrammar.body}</p>
+                </div>
+
+                <div className="pt-4">
+                  <a 
+                    href={selectedGrammar.yt} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-3 bg-red-600 text-white p-5 rounded-2xl font-black hover:bg-red-700 transition shadow-lg shadow-red-100"
+                  >
+                    <PlayCircle size={24} /> Watch Lesson on YouTube
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
